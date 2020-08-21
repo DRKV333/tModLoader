@@ -63,7 +63,6 @@ namespace Terraria.ModLoader
 		private static readonly IDictionary<string, Mod> modsByName = new Dictionary<string, Mod>(StringComparer.OrdinalIgnoreCase);
 		private static WeakReference[] weakModReferences = new WeakReference[0];
 
-		internal static readonly string modBrowserPublicKey = "<RSAKeyValue><Modulus>oCZObovrqLjlgTXY/BKy72dRZhoaA6nWRSGuA+aAIzlvtcxkBK5uKev3DZzIj0X51dE/qgRS3OHkcrukqvrdKdsuluu0JmQXCv+m7sDYjPQ0E6rN4nYQhgfRn2kfSvKYWGefp+kqmMF9xoAq666YNGVoERPm3j99vA+6EIwKaeqLB24MrNMO/TIf9ysb0SSxoV8pC/5P/N6ViIOk3adSnrgGbXnFkNQwD0qsgOWDks8jbYyrxUFMc4rFmZ8lZKhikVR+AisQtPGUs3ruVh4EWbiZGM2NOkhOCOM4k1hsdBOyX2gUliD0yjK5tiU3LBqkxoi2t342hWAkNNb4ZxLotw==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 		internal static string modBrowserPassphrase = "";
 
 		private static string steamID64 = "";
@@ -293,17 +292,6 @@ namespace Terraria.ModLoader
 					continueIsRetry: continueIsRetry,
 					showSkip: !fatal);
 			}
-		}
-
-		// TODO: This doesn't work on mono for some reason. Investigate.
-		public static bool IsSignedBy(TmodFile mod, string xmlPublicKey)
-		{
-			var f = new RSAPKCS1SignatureDeformatter();
-			var v = AsymmetricAlgorithm.Create("RSA");
-			f.SetHashAlgorithm("SHA1");
-			v.FromXmlString(xmlPublicKey);
-			f.SetKey(v);
-			return f.VerifySignature(mod.hash, mod.signature);
 		}
 
 		private static bool _pauseSavingEnabledMods;

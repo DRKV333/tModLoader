@@ -45,7 +45,7 @@ namespace Terraria.ModLoader.Core
 				}
 			}
 
-			public bool HasEaC => File.Exists(properties.eacPath);
+			public bool HasEaC => File.Exists(properties.EacPath);
 
 			private string AssemblyName => eacEnabled ? Name : Name + '_' + loadIndex;
 			private string DllName(string dll) => eacEnabled ? dll : Name + '_' + dll + '_' + loadIndex;
@@ -112,12 +112,12 @@ namespace Terraria.ModLoader.Core
 
 				try {
 					using (modFile.Open()) {
-						foreach (var dllName in properties.dllReferences) {
+						foreach (var dllName in properties.DllReferences) {
 							LoadAssembly(EncapsulateReferences(modFile.GetLibraryDll(dllName)));
 						}
 
 						if (eacEnabled && HasEaC) {//load the unmodified dll and EaC pdb
-							assembly = LoadAssembly(modFile.GetModAssembly(), File.ReadAllBytes(properties.eacPath));
+							assembly = LoadAssembly(modFile.GetModAssembly(), File.ReadAllBytes(properties.EacPath));
 						}
 						else {
 							var pdb = GetModPdb(out var imageDebugHeader);
@@ -176,7 +176,7 @@ namespace Terraria.ModLoader.Core
 				if (name == Name)
 					return AssemblyName;
 
-				if (properties.dllReferences.Contains(name))
+				if (properties.DllReferences.Contains(name))
 					return DllName(name);
 
 				if (weakDependencies.Contains(name))
@@ -267,9 +267,9 @@ namespace Terraria.ModLoader.Core
 				m.File = mod.modFile;
 				m.Code = mod.assembly;
 				m.Logger = LogManager.GetLogger(m.Name);
-				m.Side = mod.properties.side;
-				m.DisplayName = mod.properties.displayName;
-				m.tModLoaderVersion = mod.properties.buildVersion;
+				m.Side = mod.properties.Side;
+				m.DisplayName = mod.properties.DisplayName;
+				m.tModLoaderVersion = mod.properties.BuildVersion;
 				return m;
 			}
 			catch (Exception e) {

@@ -372,14 +372,14 @@ namespace Terraria.ModLoader.Core
 
 			BuildProperties properties;
 			try {
-				properties = BuildProperties.ReadBuildFile(modFolder);
+				properties = BuildProperties.ReadBuildFile(modFolder, ModLoader.version, ModLoader.beta > 0);
 			}
 			catch (Exception e) {
 				throw new BuildException(Language.GetTextValue("tModLoader.BuildErrorFailedLoadBuildTxt", Path.Combine(modFolder, "build.txt")), e);
 			}
 
 			var file = Path.Combine(ModLoader.ModPath, modName + ".tmod");
-			var modFile = new TmodFile(file, modName, properties.version);
+			var modFile = new TmodFile(file, ModLoader.version, modName, properties.Version);
 			return new BuildingMod(modFile, properties, modFolder);
 		}
 
@@ -393,8 +393,8 @@ namespace Terraria.ModLoader.Core
 				BuildModForPlatform(mod, false);
 
 				if (Program.LaunchParameters.TryGetValue("-eac", out var eacValue)) {
-					mod.properties.eacPath = Path.ChangeExtension(eacValue, "pdb");
-					status.SetStatus(Language.GetTextValue("tModLoader.EnabledEAC", mod.properties.eacPath));
+					mod.properties.EacPath = Path.ChangeExtension(eacValue, "pdb");
+					status.SetStatus(Language.GetTextValue("tModLoader.EnabledEAC", mod.properties.EacPath));
 				}
 
 				PackageMod(mod);
@@ -425,7 +425,7 @@ namespace Terraria.ModLoader.Core
 
 			// add dll references from the -eac bin folder
 			var libFolder = Path.Combine(mod.path, "lib");
-			foreach (var dllPath in mod.properties.dllReferences.Select(dllName => DllRefPath(mod, dllName, null)))
+			foreach (var dllPath in mod.properties.DllReferences.Select(dllName => DllRefPath(mod, dllName, null)))
 				if (!dllPath.StartsWith(libFolder))
 					mod.modFile.AddFile("lib/" + Path.GetFileName(dllPath), File.ReadAllBytes(dllPath));
 		}
@@ -435,7 +435,7 @@ namespace Terraria.ModLoader.Core
 			var relPath = resource.Substring(mod.path.Length + 1);
 			return IgnoreCompletely(mod, resource) ||
 				relPath == "build.txt" ||
-				!mod.properties.includeSource && sourceExtensions.Contains(Path.GetExtension(resource)) ||
+				!mod.properties.IncludeSource && sourceExtensions.Contains(Path.GetExtension(resource)) ||
 				Path.GetFileName(resource) == "Thumbs.db";
 		}
 
@@ -443,7 +443,7 @@ namespace Terraria.ModLoader.Core
 		private bool IgnoreCompletely(BuildingMod mod, string resource)
 		{
 			var relPath = resource.Substring(mod.path.Length + 1);
-			return mod.properties.ignoreFile(relPath) ||
+			return mod.properties.IgnoreFile(relPath) ||
 				relPath[0] == '.' ||
 				relPath.StartsWith("bin" + Path.DirectorySeparatorChar) ||
 				relPath.StartsWith("obj" + Path.DirectorySeparatorChar);
@@ -496,10 +496,10 @@ namespace Terraria.ModLoader.Core
 				if (mods.ContainsKey(refName))
 					continue;
 
-				bool isWeak = properties.weakReferences.Any(r => r.mod == refName);
+				bool isWeak = properties.WeakReferences.Any(r => r.mod == refName);
 				LocalMod mod;
 				try {
-					var modFile = new TmodFile(Path.Combine(ModLoader.ModPath, refName + ".tmod"));
+					var modFile = new TmodFile(Path.Combine(ModLoader.ModPath, refName + ".tmod"), ModLoader.version);
 					using (modFile.Open())
 						mod = new LocalMod(modFile);
 				}
@@ -528,7 +528,7 @@ namespace Terraria.ModLoader.Core
 				string dllPath = null;
 
 				// look for pre-compiled paths
-				if (mod.properties.noCompile) {
+				if (mod.properties.NoCompile) {
 					var allPath = Path.Combine(mod.path, mod.Name + ".All.dll");
 					dllPath = File.Exists(allPath) ? allPath : Path.Combine(mod.path, dllName);
 				}
@@ -553,10 +553,10 @@ namespace Terraria.ModLoader.Core
 
 				// read mod assembly using cecil for verification and pdb processing
 				using (var asmResolver = new BuildAssemblyResolver(Path.GetDirectoryName(dllPath), refs)) {
-					var asm = AssemblyDefinition.ReadAssembly(dllPath, new ReaderParameters { InMemory = true, ReadSymbols = mod.properties.includePDB, AssemblyResolver = asmResolver });
+					var asm = AssemblyDefinition.ReadAssembly(dllPath, new ReaderParameters { InMemory = true, ReadSymbols = mod.properties.IncludePDB, AssemblyResolver = asmResolver });
 					VerifyModAssembly(mod.Name, asm);
 
-					if (!mod.properties.includePDB)
+					if (!mod.properties.IncludePDB)
 						return;
 
 					// when reading and writing a module with cecil, the debug sequence points need regenerating, even if the methods are not changed
@@ -615,7 +615,7 @@ namespace Terraria.ModLoader.Core
 			}
 
 			//libs added by the mod
-			foreach (var path in mod.properties.dllReferences.Select(dllName => DllRefPath(mod, dllName, xna)))
+			foreach (var path in mod.properties.DllReferences.Select(dllName => DllRefPath(mod, dllName, xna)))
 				AddFile(path);
 
 			//all dlls included in all referenced mods
@@ -634,7 +634,7 @@ namespace Terraria.ModLoader.Core
 				var mainDll = $"{refMod.Name}.dll";
 				AddModEntry(mainDll, () => refMod.modFile.GetModAssembly(xna));
 
-				foreach (var dllName in refMod.properties.dllReferences) {
+				foreach (var dllName in refMod.properties.DllReferences) {
 					AddModEntry($"{dllName}.dll", () => refMod.modFile.GetLibraryDll(dllName, xna));
 				}
 			}
@@ -661,7 +661,7 @@ namespace Terraria.ModLoader.Core
 				preprocessorSymbols.AddRange(defineParam.Split(';', ' '));
 
 			var refPaths = refs.Select(entry => entry.Value.Value).ToArray();
-			var results = RoslynCompile(mod.Name, outputPath, refPaths, files, preprocessorSymbols.ToArray(), mod.properties.includePDB, allowUnsafe);
+			var results = RoslynCompile(mod.Name, outputPath, refPaths, files, preprocessorSymbols.ToArray(), mod.properties.IncludePDB, allowUnsafe);
 
 			int numWarnings = results.Cast<CompilerError>().Count(e => e.IsWarning);
 			int numErrors = results.Count - numWarnings;

@@ -11,8 +11,8 @@ namespace Terraria.ModLoader.Core
 		public DateTime lastModified;
 
 		public string Name => modFile.name;
-		public string DisplayName => string.IsNullOrEmpty(properties.displayName) ? Name : properties.displayName;
-		public Version tModLoaderVersion => properties.buildVersion;
+		public string DisplayName => string.IsNullOrEmpty(properties.DisplayName) ? Name : properties.DisplayName;
+		public Version tModLoaderVersion => properties.BuildVersion;
 
 		public bool Enabled {
 			get => ModLoader.IsEnabled(Name);

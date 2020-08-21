@@ -3,13 +3,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Packaging;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using Terraria.Localization;
-using Terraria.ModLoader.IO;
-using Terraria.ModLoader.UI;
 
 namespace Terraria.ModLoader.Core
 {
@@ -55,6 +51,8 @@ namespace Terraria.ModLoader.Core
 		private EntryReadStream sharedEntryReadStream;
 		private List<EntryReadStream> independentEntryReadStreams = new List<EntryReadStream>();
 
+		private Version currentTModLoaderVersion;
+
 		public Version tModLoaderVersion { get; private set; }
 
 		public string name { get; private set; }
@@ -63,22 +61,36 @@ namespace Terraria.ModLoader.Core
 
 		public byte[] hash { get; private set; }
 
-		internal byte[] signature { get; private set; } = new byte[256];
+		public byte[] signature { get; private set; } = new byte[256];
+
+		public static readonly string modBrowserPublicKey = "<RSAKeyValue><Modulus>oCZObovrqLjlgTXY/BKy72dRZhoaA6nWRSGuA+aAIzlvtcxkBK5uKev3DZzIj0X51dE/qgRS3OHkcrukqvrdKdsuluu0JmQXCv+m7sDYjPQ0E6rN4nYQhgfRn2kfSvKYWGefp+kqmMF9xoAq666YNGVoERPm3j99vA+6EIwKaeqLB24MrNMO/TIf9ysb0SSxoV8pC/5P/N6ViIOk3adSnrgGbXnFkNQwD0qsgOWDks8jbYyrxUFMc4rFmZ8lZKhikVR+AisQtPGUs3ruVh4EWbiZGM2NOkhOCOM4k1hsdBOyX2gUliD0yjK5tiU3LBqkxoi2t342hWAkNNb4ZxLotw==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
+
+		// TODO: This doesn't work on mono for some reason. Investigate.
+		public bool IsSignedBy(string xmlPublicKey)
+		{
+			var f = new RSAPKCS1SignatureDeformatter();
+			var v = AsymmetricAlgorithm.Create("RSA");
+			f.SetHashAlgorithm("SHA1");
+			v.FromXmlString(xmlPublicKey);
+			f.SetKey(v);
+			return f.VerifySignature(hash, signature);
+		}
 
 		private bool? validModBrowserSignature;
-		internal bool ValidModBrowserSignature {
+		public bool ValidModBrowserSignature {
 			get {
 				if (!validModBrowserSignature.HasValue)
-					validModBrowserSignature = ModLoader.IsSignedBy(this, ModLoader.modBrowserPublicKey);
+					validModBrowserSignature = IsSignedBy(modBrowserPublicKey);
 
 				return validModBrowserSignature.Value;
 			}
 		}
 
-		internal TmodFile(string path, string name = null, Version version = null) {
+		public TmodFile(string path, Version currentTModLoaderVersion, string name = null, Version version = null) {
 			this.path = path;
 			this.name = name;
 			this.version = version;
+			this.currentTModLoaderVersion = currentTModLoaderVersion;
 		}
 
 		public bool HasFile(string fileName) => files.ContainsKey(Sanitize(fileName));
@@ -91,7 +103,7 @@ namespace Terraria.ModLoader.Core
 				return entry.cachedBytes;
 
 			using (var stream = GetStream(entry))
-				return stream.ReadBytes(entry.Length);
+				return ReadBytes(stream, entry.Length);
 		}
 
 		public byte[] GetBytes(string fileName) => files.TryGetValue(Sanitize(fileName), out var entry) ? GetBytes(entry) : null;
@@ -142,7 +154,7 @@ namespace Terraria.ModLoader.Core
 		/// </summary>
 		/// <param name="fileName">The internal filepath, will be slash sanitised automatically</param>
 		/// <param name="data">The file content to add. WARNING, data is kept as a shallow copy, so modifications to the passed byte array will affect file content</param>
-		internal void AddFile(string fileName, byte[] data) {
+		public void AddFile(string fileName, byte[] data) {
 			fileName = Sanitize(fileName);
 			int size = data.Length;
 
@@ -163,7 +175,7 @@ namespace Terraria.ModLoader.Core
 			fileTable = null;
 		}
 
-		internal void RemoveFile(string fileName) {
+		public void RemoveFile(string fileName) {
 			files.Remove(Sanitize(fileName));
 			fileTable = null;
 		}
@@ -176,7 +188,7 @@ namespace Terraria.ModLoader.Core
 				yield return entry;
 		}
 
-		internal void Save() {
+		public void Save() {
 			if (fileStream != null)
 				throw new IOException($"File already open: {path}");
 
@@ -190,7 +202,7 @@ namespace Terraria.ModLoader.Core
 			using (fileStream = File.Create(path))
 			using (var writer = new BinaryWriter(fileStream)) {
 				writer.Write(Encoding.ASCII.GetBytes("TMOD"));
-				writer.Write((tModLoaderVersion = ModLoader.version).ToString());
+				writer.Write((tModLoaderVersion = currentTModLoaderVersion).ToString());
 
 				int hashPos = (int)fileStream.Position;
 				writer.Write(new byte[20 + 256 + 4]); //hash, sig, data length
@@ -313,7 +325,7 @@ namespace Terraria.ModLoader.Core
 			long pos = fileStream.Position;
 			var verifyHash = SHA1.Create().ComputeHash(fileStream);
 			if (!verifyHash.SequenceEqual(hash))
-				throw new Exception(Language.GetTextValue("tModLoader.LoadErrorHashMismatchCorrupted"));
+				throw new Exception("Hash mismatch, data blob has been modified or corrupted");
 
 			fileStream.Position = pos;
 
@@ -369,7 +381,7 @@ namespace Terraria.ModLoader.Core
 					continue;
 				}
 
-				f.cachedBytes = fileStream.ReadBytes(f.CompressedLength);
+				f.cachedBytes = ReadBytes(fileStream, f.CompressedLength);
 			}
 		}
 
@@ -385,8 +397,8 @@ namespace Terraria.ModLoader.Core
 		}
 
 		private void Upgrade() {
-			Interface.loadMods.SubProgressText = $"Upgrading: {Path.GetFileName(path)}";
-			Logging.tML.InfoFormat("Upgrading: {0}", Path.GetFileName(path));
+			//Interface.loadMods.SubProgressText = $"Upgrading: {Path.GetFileName(path)}";
+			//Logging.tML.InfoFormat("Upgrading: {0}", Path.GetFileName(path));
 
 			using (var deflateStream = new DeflateStream(fileStream, CompressionMode.Decompress, true))
 			using (var reader = new BinaryReader(deflateStream)) {
@@ -400,7 +412,7 @@ namespace Terraria.ModLoader.Core
 
 			// update buildVersion
 			var info = BuildProperties.ReadModFile(this);
-			info.buildVersion = tModLoaderVersion;
+			info.BuildVersion = tModLoaderVersion;
 			// TODO should be turn this into .info? Generally files starting with . are ignored, at least on Windows (and are much harder to accidentally delete or even manually create)
 			AddFile("Info", info.ToBytes());
 
@@ -420,6 +432,20 @@ namespace Terraria.ModLoader.Core
 			// Save closes the file so re-open it
 			Open();
 			// Read contract fulfilled
+		}
+
+		private static byte[] ReadBytes(Stream stream, int len)
+		{
+			var buf = new byte[len];
+
+			int r, pos = 0;
+			while ((r = stream.Read(buf, pos, buf.Length - pos)) > 0)
+				pos += r;
+
+			if (pos != buf.Length)
+				throw new IOException($"Stream did not contain enough bytes ({pos}) < ({buf.Length})");
+
+			return buf;
 		}
 	}
 }

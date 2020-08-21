@@ -33,7 +33,7 @@ namespace Terraria.ModLoader.Core
 				var lastModified = File.GetLastWriteTime(fileName);
 				if (!modsDirCache.TryGetValue(fileName, out var mod) || mod.lastModified != lastModified) {
 					try {
-						var modFile = new TmodFile(fileName);
+						var modFile = new TmodFile(fileName, ModLoader.version);
 						using (modFile.Open())
 							mod = new LocalMod(modFile) { lastModified = lastModified };
 					}
@@ -81,7 +81,7 @@ namespace Terraria.ModLoader.Core
 			//	File.Delete(fileName);
 			//}
 			Interface.loadMods.SetLoadStage("tModLoader.MSFinding");
-			var modsToLoad = FindMods().Where(mod => ModLoader.IsEnabled(mod.Name) && LoadSide(mod.properties.side)).ToList();
+			var modsToLoad = FindMods().Where(mod => ModLoader.IsEnabled(mod.Name) && LoadSide(mod.properties.Side)).ToList();
 			
 			// Press shift while starting up tModLoader or while trapped in a reload cycle to skip loading all mods.
 			if (Main.instance.IsActive && Main.oldKeyState.PressingShift() || ModLoader.skipLoad || token.IsCancellationRequested) {
@@ -184,13 +184,13 @@ namespace Terraria.ModLoader.Core
 					if (dep.target == null || !nameMap.TryGetValue(dep.mod, out var inst))
 						continue;
 
-					if (inst.properties.version < dep.target) {
+					if (inst.properties.Version < dep.target) {
 						errored.Add(mod);
-						errorLog.AppendLine(Language.GetTextValue("tModLoader.LoadErrorDependencyVersionTooLow", mod, dep.target, dep.mod, inst.properties.version));
+						errorLog.AppendLine(Language.GetTextValue("tModLoader.LoadErrorDependencyVersionTooLow", mod, dep.target, dep.mod, inst.properties.Version));
 					}
-					else if (inst.properties.version.Major != dep.target.Major) {
+					else if (inst.properties.Version.Major != dep.target.Major) {
 						errored.Add(mod);
-						errorLog.AppendLine(Language.GetTextValue("tModLoader.LoadErrorMajorVersionMismatch", mod, dep.target, dep.mod, inst.properties.version));
+						errorLog.AppendLine(Language.GetTextValue("tModLoader.LoadErrorMajorVersionMismatch", mod, dep.target, dep.mod, inst.properties.Version));
 					}
 				}
 
@@ -209,7 +209,7 @@ namespace Terraria.ModLoader.Core
 				FindChains = (search, stack) => {
 					stack.Push(search);
 
-					if (search.properties.side == ModSide.Both && stack.Count > 1) {
+					if (search.properties.Side == ModSide.Both && stack.Count > 1) {
 						if (stack.Count > 2)//direct Both -> Both references are ignored
 							chains.Add(stack.Reverse().ToList());
 					}
@@ -242,13 +242,13 @@ namespace Terraria.ModLoader.Core
 		private static TopoSort<LocalMod> BuildSort(ICollection<LocalMod> mods) {
 			var nameMap = mods.ToDictionary(mod => mod.Name);
 			return new TopoSort<LocalMod>(mods,
-				mod => mod.properties.sortAfter.Where(nameMap.ContainsKey).Select(name => nameMap[name]),
-				mod => mod.properties.sortBefore.Where(nameMap.ContainsKey).Select(name => nameMap[name]));
+				mod => mod.properties.SortAfter.Where(nameMap.ContainsKey).Select(name => nameMap[name]),
+				mod => mod.properties.SortBefore.Where(nameMap.ContainsKey).Select(name => nameMap[name]));
 		}
 
 		internal static List<LocalMod> Sort(ICollection<LocalMod> mods) {
 			var preSorted = mods.OrderBy(mod => mod.Name).ToList();
-			var syncedSort = BuildSort(preSorted.Where(mod => mod.properties.side == ModSide.Both).ToList());
+			var syncedSort = BuildSort(preSorted.Where(mod => mod.properties.Side == ModSide.Both).ToList());
 			var fullSort = BuildSort(preSorted);
 			EnsureSyncedDependencyStability(syncedSort, fullSort);
 

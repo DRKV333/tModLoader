@@ -91,7 +91,7 @@
      <EmbeddedResource Include="..\..\references\ReLogicWindows.dll" Condition="$(DefineConstants.Contains('WINDOWS'))">
        <LogicalName>ReLogic.dll</LogicalName>
      </EmbeddedResource>
-@@ -100,6 +_,27 @@
+@@ -100,6 +_,35 @@
      <EmbeddedResource Include="..\..\references\Steamworks.NET.Linux.dll" Condition="$(DefineConstants.Contains('LINUX'))">
        <LogicalName>Steamworks.NET.dll</LogicalName>
      </EmbeddedResource>
@@ -116,6 +116,14 @@
 +    <EmbeddedResource Include="..\..\references\System.ValueTuple.Mono.dll" Condition="!$(DefineConstants.Contains('WINDOWS'))">
 +      <LogicalName>System.ValueTuple.dll</LogicalName>
 +    </EmbeddedResource>
++  </ItemGroup>
++  <PropertyGroup>
++	<LibTModFileConfiguration Condition="$(Configuration.Contains('Debug'))">Debug</LibTModFileConfiguration>
++	<LibTModFileConfiguration Condition="'$(LibTModFileConfiguration)' == ''">Release</LibTModFileConfiguration>
++  </PropertyGroup>
++  <ItemGroup>
++    <ProjectReference Include="..\..\LibTModFile\LibTModFile.csproj" />
++	<EmbeddedResource Include="..\..\LibTModFile\bin\$(LibTModFileConfiguration)\net45\LibTModFile.dll" />
    </ItemGroup>
    <Target Name="EditBin" AfterTargets="Build">
      <PropertyGroup>

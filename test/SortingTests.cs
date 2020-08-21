@@ -14,14 +14,24 @@ namespace Terraria.ModLoader
 			ModSide side = ModSide.Both, string version = null,
 			IEnumerable<string> refs = null, IEnumerable<string> weakRefs = null,
 			IEnumerable<string> sortAfter = null, IEnumerable<string> sortBefore = null) {
-			return new LocalMod(new TmodFile(null, name), new BuildProperties {
-				side = side,
-				version = new Version(version ?? "1.0.0.0"),
-				modReferences = refs?.Select(BuildProperties.ModReference.Parse).ToArray() ?? new BuildProperties.ModReference[0],
-				weakReferences = weakRefs?.Select(BuildProperties.ModReference.Parse).ToArray() ?? new BuildProperties.ModReference[0],
-				sortAfter = sortAfter?.ToArray() ?? new string[0],
-				sortBefore = sortBefore?.ToArray() ?? new string[0]
-			});
+			BuildProperties props = new BuildProperties(ModLoader.version, ModLoader.beta > 0) {
+				Side = side,
+				Version = new Version(version ?? "1.0.0.0")
+			};
+
+			if (refs != null)
+				props.ModReferences.AddRange(refs.Select(BuildProperties.ModReference.Parse));
+
+			if (weakRefs != null)
+				props.WeakReferences.AddRange(weakRefs?.Select(BuildProperties.ModReference.Parse));
+
+			if (sortAfter != null)
+				props.SortAfter.AddRange(sortAfter);
+
+			if (sortBefore != null)
+				props.SortBefore.AddRange(sortBefore);
+
+			return new LocalMod(new TmodFile(null, ModLoader.version, name), props);
 		}
 
 		private static void AssertSetsEqual<T>(ICollection<T> set1, ICollection<T> set2) {
@@ -77,12 +87,12 @@ namespace Terraria.ModLoader
 			var indexMap = sorted.ToDictionary(m => m.Name, sorted.IndexOf);
 			foreach (var mod in list) {
 				int index = indexMap[mod.Name];
-				foreach (var dep in mod.properties.sortAfter) {
+				foreach (var dep in mod.properties.SortAfter) {
 					int i;
 					if (indexMap.TryGetValue(dep, out i) && i > index)
 						Assert.Fail(mod.Name + " sorted after " + dep);
 				}
-				foreach (var dep in mod.properties.sortBefore) {
+				foreach (var dep in mod.properties.SortBefore) {
 					int i;
 					if (indexMap.TryGetValue(dep, out i) && i < index)
 						Assert.Fail(mod.Name + " sorted before " + dep);
@@ -368,8 +378,8 @@ namespace Terraria.ModLoader
 				Make("D", sortAfter: new[] {"C", "B"}, side: ModSide.Client),
 				Make("E", sortAfter: new[] {"D", "A"})
 			};
-			var s1 = AssertSortSatisfied(list1).Where(m => m.properties.side == ModSide.Both).ToList();
-			var s2 = AssertSortSatisfied(list1.Where(m => m.properties.side == ModSide.Both).ToList());
+			var s1 = AssertSortSatisfied(list1).Where(m => m.properties.Side == ModSide.Both).ToList();
+			var s2 = AssertSortSatisfied(list1.Where(m => m.properties.Side == ModSide.Both).ToList());
 			Assert.IsTrue(Enumerable.SequenceEqual(s1, s2));
 
 			//reverse the order
@@ -380,8 +390,8 @@ namespace Terraria.ModLoader
 				Make("B", sortAfter: new[] {"C", "D"}, side: ModSide.Client),
 				Make("A", sortAfter: new[] {"B", "E"})
 			};
-			s1 = AssertSortSatisfied(list2).Where(m => m.properties.side == ModSide.Both).ToList();
-			s2 = AssertSortSatisfied(list2.Where(m => m.properties.side == ModSide.Both).ToList());
+			s1 = AssertSortSatisfied(list2).Where(m => m.properties.Side == ModSide.Both).ToList();
+			s2 = AssertSortSatisfied(list2.Where(m => m.properties.Side == ModSide.Both).ToList());
 			Assert.IsTrue(Enumerable.SequenceEqual(s1, s2));
 
 			//mostly independent sort with random client only before/afters
@@ -395,8 +405,8 @@ namespace Terraria.ModLoader
 				Make("G"),
 				Make("H"),
 			};
-			s1 = AssertSortSatisfied(list3).Where(m => m.properties.side == ModSide.Both).ToList();
-			s2 = AssertSortSatisfied(list3.Where(m => m.properties.side == ModSide.Both).ToList());
+			s1 = AssertSortSatisfied(list3).Where(m => m.properties.Side == ModSide.Both).ToList();
+			s2 = AssertSortSatisfied(list3.Where(m => m.properties.Side == ModSide.Both).ToList());
 			Assert.IsTrue(Enumerable.SequenceEqual(s1, s2));
 		}
 	}

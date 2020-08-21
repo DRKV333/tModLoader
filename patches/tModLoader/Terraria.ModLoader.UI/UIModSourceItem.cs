@@ -176,25 +176,25 @@ namespace Terraria.ModLoader.UI
 							Content = modFile.GetBytes("icon.png")
 						});
 				}
-				if (bp.beta)
+				if (bp.Beta)
 					throw new WebException(Language.GetTextValue("tModLoader.BetaModCantPublishError"));
-				if (bp.buildVersion != modFile.tModLoaderVersion)
+				if (bp.BuildVersion != modFile.tModLoaderVersion)
 					throw new WebException(Language.GetTextValue("OutdatedModCantPublishError.BetaModCantPublishError"));
 
 				var values = new NameValueCollection
 				{
-					{ "displayname", bp.displayName },
-					{ "displaynameclean", string.Join("", ChatManager.ParseMessage(bp.displayName, Color.White).Where(x=> x.GetType() == typeof(TextSnippet)).Select(x => x.Text)) },
+					{ "displayname", bp.DisplayName },
+					{ "displaynameclean", string.Join("", ChatManager.ParseMessage(bp.DisplayName, Color.White).Where(x=> x.GetType() == typeof(TextSnippet)).Select(x => x.Text)) },
 					{ "name", modFile.name },
-					{ "version", "v"+bp.version },
-					{ "author", bp.author },
-					{ "homepage", bp.homepage },
-					{ "description", bp.description },
+					{ "version", "v"+bp.Version },
+					{ "author", bp.Author },
+					{ "homepage", bp.Homepage },
+					{ "description", bp.Description },
 					{ "steamid64", ModLoader.SteamID64 },
 					{ "modloaderversion", "tModLoader v"+modFile.tModLoaderVersion },
 					{ "passphrase", ModLoader.modBrowserPassphrase },
-					{ "modreferences", String.Join(", ", bp.modReferences.Select(x => x.mod)) },
-					{ "modside", bp.side.ToFriendlyString() },
+					{ "modreferences", String.Join(", ", bp.ModReferences.Select(x => x.mod)) },
+					{ "modside", bp.Side.ToFriendlyString() },
 				};
 				if (values["steamid64"].Length != 17)
 					throw new WebException($"The steamid64 '{values["steamid64"]}' is invalid, verify that you are logged into Steam and don't have a pirated copy of Terraria.");

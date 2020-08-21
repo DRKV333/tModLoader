@@ -113,9 +113,9 @@ namespace Terraria.ModLoader.UI
 				}
 			}
 
-			_modReferences = _mod.properties.modReferences.Select(x => x.mod).ToArray();
+			_modReferences = _mod.properties.ModReferences.Select(x => x.mod).ToArray();
 			if (_modReferences.Length > 0 && !_mod.Enabled) {
-				string refs = string.Join(", ", _mod.properties.modReferences);
+				string refs = string.Join(", ", _mod.properties.ModReferences);
 				var icon = UICommon.ButtonExclamationTexture;
 				_modReferenceIcon = new UIHoverImage(icon, Language.GetTextValue("tModLoader.ModDependencyClickTooltip", refs)) {
 					Left = new StyleDimension(_uiModStateText.Left.Pixels + _uiModStateText.Width.Pixels + PADDING, 0f),
@@ -138,7 +138,7 @@ namespace Terraria.ModLoader.UI
 				Append(_keyImage);
 				_modName.Left.Pixels += _keyImage.Width.Pixels + PADDING * 2f;
 			}
-			if (_mod.properties.beta) {
+			if (_mod.properties.Beta) {
 				_keyImage = new UIHoverImage(Main.itemTexture[ItemID.ShadowKey], Language.GetTextValue("tModLoader.BetaModCantPublish")) {
 					Left = { Pixels = -10, Percent = 1f }
 				};
@@ -204,7 +204,7 @@ namespace Terraria.ModLoader.UI
 			drawPos = new Vector2(innerDimensions.X + 10f + _modIconAdjust, innerDimensions.Y + 45f);
 
 			// TODO: These should just be UITexts
-			if (_mod.properties.side != ModSide.Server && (_mod.Enabled != _loaded || _configChangesRequireReload)) {
+			if (_mod.properties.Side != ModSide.Server && (_mod.Enabled != _loaded || _configChangesRequireReload)) {
 				if (_modReferenceIcon != null) {
 					drawPos += new Vector2(_uiModStateText.Width.Pixels + _modReferenceIcon.Width.Pixels + PADDING, 0f);
 				}
@@ -213,7 +213,7 @@ namespace Terraria.ModLoader.UI
 				}
 				Utils.DrawBorderString(spriteBatch, _configChangesRequireReload ? Language.GetTextValue("tModLoader.ModReloadForced") : Language.GetTextValue("tModLoader.ModReloadRequired"), drawPos, Color.White, 1f, 0f, 0f, -1);
 			}
-			if (_mod.properties.side == ModSide.Server) {
+			if (_mod.properties.Side == ModSide.Server) {
 				drawPos += new Vector2(90f, -2f);
 				spriteBatch.Draw(UICommon.ModBrowserIconsTexture, drawPos, new Rectangle(5 * 34, 3 * 34, 32, 32), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 				if (new Rectangle((int)drawPos.X, (int)drawPos.Y, 32, 32).Contains(Main.MouseScreen.ToPoint()))
@@ -223,8 +223,8 @@ namespace Terraria.ModLoader.UI
 			if (_moreInfoButton?.IsMouseHovering == true) {
 				_tooltip = Language.GetTextValue("tModLoader.ModsMoreInfo");
 			}
-			else if (_modName?.IsMouseHovering == true && _mod?.properties.author.Length > 0) {
-				_tooltip = Language.GetTextValue("tModLoader.ModsByline", _mod.properties.author);
+			else if (_modName?.IsMouseHovering == true && _mod?.properties.Author.Length > 0) {
+				_tooltip = Language.GetTextValue("tModLoader.ModsByline", _mod.properties.Author);
 			}
 			else if (_uiModStateText?.IsMouseHovering == true) {
 				_tooltip = ToggleModStateText;
@@ -284,7 +284,7 @@ namespace Terraria.ModLoader.UI
 				if (refLocalMod != null) {
 					// Enable refs recursively
 					// This might trigger multiple "Enabling mod X" logs, but the enabled is a hash set so there will be no problems
-					var modRefsOfModRef = refLocalMod.properties.modReferences.Select(x => x.mod).ToArray();
+					var modRefsOfModRef = refLocalMod.properties.ModReferences.Select(x => x.mod).ToArray();
 					EnableDepsRecursive(modList, modRefsOfModRef, missingRefs);
 				}
 				else {
@@ -298,7 +298,7 @@ namespace Terraria.ModLoader.UI
 
 		internal void ShowMoreInfo(UIMouseEvent evt, UIElement listeningElement) {
 			Main.PlaySound(SoundID.MenuOpen);
-			Interface.modInfo.Show(ModName, _mod.DisplayName, Interface.modsMenuID, _mod, _mod.properties.description, _mod.properties.homepage);
+			Interface.modInfo.Show(ModName, _mod.DisplayName, Interface.modsMenuID, _mod, _mod.properties.Description, _mod.properties.Homepage);
 		}
 
 		internal void OpenConfig(UIMouseEvent evt, UIElement listeningElement) {
@@ -326,7 +326,7 @@ namespace Terraria.ModLoader.UI
 		public bool PassFilters() {
 			if (Interface.modsMenu.filter.Length > 0) {
 				if (Interface.modsMenu.searchFilterMode == SearchFilter.Author) {
-					if (_mod.properties.author.IndexOf(Interface.modsMenu.filter, StringComparison.OrdinalIgnoreCase) == -1) {
+					if (_mod.properties.Author.IndexOf(Interface.modsMenu.filter, StringComparison.OrdinalIgnoreCase) == -1) {
 						return false;
 					}
 				}
@@ -337,7 +337,7 @@ namespace Terraria.ModLoader.UI
 				}
 			}
 			if (Interface.modsMenu.modSideFilterMode != ModSideFilter.All) {
-				if ((int)_mod.properties.side != (int)Interface.modsMenu.modSideFilterMode - 1)
+				if ((int)_mod.properties.Side != (int)Interface.modsMenu.modSideFilterMode - 1)
 					return false;
 			}
 			switch (Interface.modsMenu.enabledFilterMode) {

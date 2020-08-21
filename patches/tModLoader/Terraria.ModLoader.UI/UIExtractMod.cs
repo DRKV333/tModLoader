@@ -48,11 +48,11 @@ namespace Terraria.ModLoader.UI
 
 				log = new StreamWriter(Path.Combine(dir, LOG_NAME)) { AutoFlush = true };
 
-				if (mod.properties.hideCode)
+				if (mod.properties.HideCode)
 					log.WriteLine(Language.GetTextValue("tModLoader.ExtractHideCodeMessage"));
-				else if (!mod.properties.includeSource)
+				else if (!mod.properties.IncludeSource)
 					log.WriteLine(Language.GetTextValue("tModLoader.ExtractNoSourceCodeMessage"));
-				if (mod.properties.hideResources)
+				if (mod.properties.HideResources)
 					log.WriteLine(Language.GetTextValue("tModLoader.ExtractHideResourcesMessage"));
 
 				log.WriteLine(Language.GetTextValue("tModLoader.ExtractFileListing"));
@@ -72,8 +72,8 @@ namespace Terraria.ModLoader.UI
 						continue;
 
 					bool hidden = codeExtensions.Contains(Path.GetExtension(name))
-						? mod.properties.hideCode
-						: mod.properties.hideResources;
+						? mod.properties.HideCode
+						: mod.properties.HideResources;
 
 					if (hidden) {
 						log.Write($"[hidden] {name}");
@@ -98,7 +98,7 @@ namespace Terraria.ModLoader.UI
 						File.Copy(path, Path.Combine(modReferencesPath, $"{mod.Name}_v{mod.modFile.version}.dll"), true);
 						log?.WriteLine("You can find this mod's .dll files under ModLoader\\references\\mods for easy mod collaboration!");
 					}
-					if (name == $"{mod.Name}.xml" && !mod.properties.hideCode) {
+					if (name == $"{mod.Name}.xml" && !mod.properties.HideCode) {
 						string modReferencesPath = Path.Combine(Program.SavePath, "references", "mods");
 						Directory.CreateDirectory(modReferencesPath);
 						File.Copy(path, Path.Combine(modReferencesPath, $"{mod.Name}_v{mod.modFile.version}.xml"), true);

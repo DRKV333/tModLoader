@@ -280,7 +280,7 @@ namespace Terraria.ModLoader
 
 				if (downloadingFile.Position == downloadingLength) {
 					downloadingFile.Close();
-					var mod = new TmodFile(downloadingMod.path);
+					var mod = new TmodFile(downloadingMod.path, ModLoader.version);
 					using (mod.Open()) { }
 
 					if (!downloadingMod.Matches(mod))
