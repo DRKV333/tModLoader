@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	
+	<PropertyGroup>
+		<_TmodOtherFramework Condition="'$(TmodTargetFramework)' == 'XNA'">FNA</_TmodOtherFramework>
+		<_TmodOtherFramework Condition="'$(TmodTargetFramework)' == 'FNA'">XNA</_TmodOtherFramework>
+		
+		<_TmodOtherFrameworkProperties>TmodBuildDllOnly=true;TmodTargetFramework=$(_TmodOtherFramework)</_TmodOtherFrameworkProperties>
+	</PropertyGroup>
+	
+	<PropertyGroup>
+		<TmodOutput Condition="'$(TmodOutput)' == ''">bin\$(AssemblyName).tmod</TmodOutput>
+	</PropertyGroup>
+	
+	<ItemGroup Condition="'$(TmodHideCode)' == 'true'">
+		<TmodContent Remove="**\*.cs" />
+		<TmodContent Remove="**\*.csproj" />
+		<TmodContent Remove="**\*.sln" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<TmodContent Include="$(TmodInfoPath)">
+			<TmodFileName>Info</TmodFileName>
+		</TmodContent>
+	</ItemGroup>
+	
+	<!-- Invoke Build target with the other framework recursively. -->
+	<Target Name="TmodBuildOtherFramework" >
+		<MSBuild Projects="$(MSBuildProjectFullPath)" Properties="$(_TmodOtherFrameworkProperties)" Targets="Build">
+			<Output TaskParameter="TargetOutputs" ItemName="_TmodTargetPathOther" />
+		</MSBuild>
+	</Target>
+	
+	<Target Name="TmodCreateInfo" Inputs="@(TmodInfoDefinedIn)" Outputs="$(TmodInfoPath)">
+		<MakeDir Directories="$([System.IO.Path]::GetDirectoryName($(TmodInfoPath)))" />
+		<!-- TODO: Actually look at the tML executable to determine version. -->
+		<TmodCreateInfo
+			InfoOutputPath="$(TmodInfoPath)"
+			TMLVersion="0.11"
+			
+			Author="$(TmodAuthor)"
+			Version="$(TmodVersion)"
+			DisplayName="$(TmodDisplayName)"
+			HideCode="$(TmodHideCode)"
+			HideResources="$(TmodHideResources)"
+			Homepage="$(TmodHomepage)"
+			Description="$(TmodDescription)"
+			Side="$(TmodSide)"
+		/>
+	</Target>
+	
+	<Target Name="TmodAddAssembliesToContent" DependsOnTargets="Build;TmodBuildOtherFramework">
+		<CallTarget Targets="GetTargetPath" UseResultsCache="true">
+			<Output TaskParameter="TargetOutputs" ItemName="_TmodTargetPathPrimary" />
+		</CallTarget>
+		
+		<Error 
+			Condition="'@(_TmodTargetPathPrimary->Count())' != '1' OR '@(_TmodTargetPathOther->Count())' != '1'"
+			Text="The number of output files for the project was not one."
+		/>
+		
+		<ItemGroup>
+			<TmodContent Include="@(_TmodTargetPathPrimary)">
+				<TmodFileName>$(AssemblyName).$(TmodTargetFramework).dll</TmodFileName>
+			</TmodContent>
+			<TmodContent Include="@(_TmodTargetPathOther)">
+				<TmodFileName>$(AssemblyName).$(_TmodOtherFramework).dll</TmodFileName>
+			</TmodContent>
+		</ItemGroup>
+	</Target>
+		
+	<Target 
+		Name="TmodPackage"
+		AfterTargets="Build"
+		DependsOnTargets="TmodBuildOtherFramework;TmodCreateInfo;TmodAddAssembliesToContent"
+		Inputs="@(TmodContent)"
+		Outputs="$(TmodOutput)"
+	>
+		<TmodPackage
+			ProjectDirectory="$(MSBuildProjectDirectory)"
+			ContentFiles="@(TmodContent)"
+			Name="$(AssemblyName)"
+			Version="$(TmodVersion)"
+			TMLVersion="0.11"
+			TmodOutputPath="$(TmodOutput)"
+		/>
+	</Target>
+	
+	<Target Name="TmodClean" AfterTargets="Clean">
+		<MSBuild Projects="$(MSBuildProjectFullPath)" Properties="$(_TmodOtherFrameworkProperties)" Targets="Clean" />
+		<Delete Files="$(TmodInfoPath)" />
+		<Delete Files="$(TmodOutput)" />
+	</Target>
+	
+</Project>

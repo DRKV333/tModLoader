@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+	<Import Project="$(TmodReferenceTargetPath)" />
+	
+	<ItemGroup Condition="'$(TmodSystemFramework)' == 'XNA' AND '$(TmodTargetFramework)' == 'FNA'">
+		<Reference Remove="Microsoft.Xna.Framework" />
+		<Reference Remove="Microsoft.Xna.Framework.Graphics" />
+		<Reference Remove="Microsoft.Xna.Framework.Game" />
+		<Reference Remove="Microsoft.Xna.Framework.Xact" />
+		
+		<Reference Update="Terraria">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\tModLoader.FNA.exe</HintPath>
+		</Reference>
+		<Reference Update="ReLogic">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\ReLogicLinux.dll</HintPath>
+		</Reference>
+
+		<Reference Include="FNA">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\FNA.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TmodSystemFramework)' == 'FNA' AND '$(TmodTargetFramework)' == 'XNA'">
+		<Reference Remove="XNA" />
+
+		<Reference Update="Terraria">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\tModLoader.XNA.exe</HintPath>
+		</Reference>
+		<Reference Update="ReLogic">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\ReLogicWindows.dll</HintPath>
+		</Reference>
+
+		<Reference Include="FNA">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\FNA.dll</HintPath>
+		</Reference>
+		
+		<Reference Include="Microsoft.Xna.Framework">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\Microsoft.Xna.Framework.dll</HintPath>
+		</Reference>
+		<Reference Include="Microsoft.Xna.Framework.Graphics">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\Microsoft.Xna.Framework.Graphics.dll</HintPath>
+		</Reference>
+		<Reference Include="Microsoft.Xna.Framework.Game">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\Microsoft.Xna.Framework.Game.dll</HintPath>
+		</Reference>
+		<Reference Include="Microsoft.Xna.Framework.Xact">
+			<HintPath>$(TerrariaSteamPath)\ModCompile\Microsoft.Xna.Framework.Xact.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<!-- Import the build target conditionally, to avoid circular dependency graph. -->
+	<Import Condition="'$(TmodBuildDllOnly)' != 'true'" Project="Build.targets" />
+	
+</Project>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	
+	<PropertyGroup>
+		<_TmodTasksDll>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\ModBuildTasks.dll</_TmodTasksDll>
+	</PropertyGroup>
+	
+	<UsingTask TaskName="TmodCreateInfo" AssemblyFile="$(_TmodTasksDll)" />
+	<UsingTask TaskName="TmodDetectTmlVersion" AssemblyFile="$(_TmodTasksDll)" />
+	<UsingTask TaskName="TmodPackage" AssemblyFile="$(_TmodTasksDll)" />
+	
+	<!-- Determine the "primary" build target for the project based on platform.
+	     The project can also read this if it needs to something different based on the framework. -->
+	<PropertyGroup>
+		<TmodTargetFramework Condition="'$(TmodTargetFramework)' == '' AND $([MSBuild]::IsOsPlatform('Windows'))">XNA</TmodTargetFramework>
+		<TmodTargetFramework Condition="'$(TmodTargetFramework)' == ''">FNA</TmodTargetFramework>
+	</PropertyGroup>
+	
+	<!-- Detect TModLoader paths here, in case the project needs them for something. -->
+	<PropertyGroup>
+		<TmodSavePath Condition="'$(TmodSavePath)' == '' AND $([MSBuild]::IsOsPlatform('Windows'))">$(registry:HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders@Personal)\My Games\Terraria\ModLoader</TmodSavePath>
+		<TmodSavePath Condition="'$(TmodSavePath)' == '' AND $([MSBuild]::IsOsPlatform('Linux')) AND '$(XDG_DATA_HOME)' != ''">$(XDG_DATA_HOME)\.local\share\Terraria\ModLoader</TmodSavePath>
+		<TmodSavePath Condition="'$(TmodSavePath)' == '' AND $([MSBuild]::IsOsPlatform('Linux'))">$(HOME)\.local\share\Terraria\ModLoader</TmodSavePath>
+		<TmodSavePath Condition="'$(TmodSavePath)' == '' AND $([MSBuild]::IsOsPlatform('OSX'))">$(HOME)\Library\Application Support\Terraria\ModLoader</TmodSavePath>
+		
+		<TmodReferenceTargetPath Condition="'$(TmodReferenceTargetPath)' == ''">$(tmodSavePath)\References\tModLoader.targets</TmodReferenceTargetPath>
+	</PropertyGroup>
+	
+	<!-- Detect the version of the installed references. ('XNA', 'FNA', or '' for none detected) -->
+	<PropertyGroup Condition="Exists('$(TmodReferenceTargetPath)')">
+		<TmodSystemFramework Condition="$([MSBuild]::IsOsPlatform('Windows'))">XNA</TmodSystemFramework>
+		<TmodSystemFramework Condition="'$(TmodTargetFramework)' == ''">FNA</TmodSystemFramework>
+	</PropertyGroup>
+	
+	<!-- Different output folders for the different frameworks. -->
+	<PropertyGroup>
+		<OutputPath>bin\$(Configuration)\$(TmodTargetFramework)\</OutputPath>
+		<IntermediateOutputPath>$(BaseIntermediateOutputPath)$(Configuration)\$(TmodTargetFramework)\</IntermediateOutputPath>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<TmodAuthor></TmodAuthor>
+		<TmodVersion>1.0</TmodVersion>
+		<TmodDisplayName></TmodDisplayName>
+		<TmodHideCode>false</TmodHideCode>
+		<TmodHideResources>false</TmodHideResources>
+		<TmodHomepage></TmodHomepage>
+		<TmodDescription></TmodDescription>
+		<TmodSide>Both</TmodSide>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<TmodInfoDefinedIn Include="$(MSBuildProjectFullPath)" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<TmodContent Include="**" />
+		<TmodContent Remove="bin\**" />
+		<TmodContent Remove="$(BaseIntermediateOutputPath)**" />
+		<TmodContent Remove=".*" />
+		<TmodContent Remove=".*\**" />
+		<TmodContent Remove="**\build.txt" />
+		<TmodContent Remove="**\Thumbs.db" />
+		<TmodContent Remove="**\*.binlog" />
+		<TmodContent Remove="**\*.ProjectImports.zip" />
+	</ItemGroup>
+	
+	<PropertyGroup>
+		<TmodInfoPath>$(IntermediateOutputPath)\tModLoader.ModBuild\Info</TmodInfoPath>
+	</PropertyGroup>
+	
+</Project>
